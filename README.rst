@@ -16,5 +16,3 @@ Example
                                                availability_zone=['ap-northeast-1a'])
    result = api.command(query)
 
-zzz
-

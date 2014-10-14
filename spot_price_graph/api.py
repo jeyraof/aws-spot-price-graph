@@ -2,6 +2,8 @@
 
 from awscli.clidriver import create_clidriver
 from datetime import datetime, timedelta
+from contextlib import contextmanager
+import json
 
 
 class AWSAPIWrapper(object):
@@ -9,7 +11,11 @@ class AWSAPIWrapper(object):
         self.driver = create_clidriver()
 
     def command(self, *args):
-        self.driver.main(*args)
+        with capture() as output:
+            self.driver.main(*args)
+
+        result = output[0].rstrip()
+        return json.loads(result)
 
     @property
     def ec2(self):
@@ -118,3 +124,20 @@ class EC2(object):
                 az = 'Name=availability-zone,Values=' + ','.join(availability_zone_tmp)
                 return ['--filters', az]
         return []
+
+
+@contextmanager
+def capture():
+    import sys
+    from cStringIO import StringIO
+    old_out, old_err = sys.stdout, sys.stderr
+    out = [StringIO(), StringIO()]
+
+    try:
+        sys.stdout, sys.stderr = out
+        yield out
+
+    finally:
+        sys.stdout, sys.stderr = old_out, old_err
+        out[0] = out[0].getvalue()
+        out[1] = out[1].getvalue()

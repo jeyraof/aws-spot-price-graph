@@ -3,6 +3,7 @@
 from awscli.clidriver import create_clidriver
 from datetime import datetime, timedelta
 from contextlib import contextmanager
+from settings import TIMESTAMP_FORMAT
 import json
 
 
@@ -40,7 +41,7 @@ class EC2(object):
                                'cg1.4xlarge',
                                'r3.large', 'r3.xlarge', 'r3.2xlarge', 'r3.4xlarge', 'r3.8xlarge',
                                ]
-        self.timestamp_format = '%Y-%m-%dT%H:%M:%SZ'
+        self.timestamp_format = TIMESTAMP_FORMAT
         self.product_descriptions = ['Linux/UNIX',
                                      'Linux/UNIX (Amazon VPC)',
                                      'SUSE Linux',

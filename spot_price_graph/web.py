@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
 
 import flask
+from celery import Celery
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask_debugtoolbar import DebugToolbarExtension
-
-from settings import FLASK_CONFIG, TIMESTAMP_FORMAT
+from settings import FLASK_CONFIG, TIMESTAMP_FORMAT, CELERY_BROKER_URI, CELERY_RESULT_URI
 from spot_price_graph.api import AWSAPIWrapper
-
 from datetime import datetime, timedelta
 
 app = flask.Flask(__name__)
@@ -14,24 +13,29 @@ app.config.update(FLASK_CONFIG)
 toolbar = DebugToolbarExtension(app)
 db = SQLAlchemy(app)
 
+celery = Celery(main='spot_price',
+                backend=CELERY_RESULT_URI,
+                broker=CELERY_BROKER_URI,)
+celery.conf.update(
+    CELERY_TIMEZONE='UTC',
+    CELERY_ENABLE_UTC=True,
+    CELERYBEAT_SCHEDULE={
+        'crawl-spot-price-every-hour': {
+            'task': 'spot_price_graph.web.crawl_spot_price',
+            # 'schedule': timedelta(hours=1),
+            'schedule': timedelta(seconds=10),
+        }
+    }
+)
 
+
+# Views
 @app.route("/")
 def index():
-    api = AWSAPIWrapper()
-    query = api.ec2.describe_spot_price_history(instance_types=['t1.micro'],
-                                                start_time=datetime.utcnow() - timedelta(hours=24),
-                                                product_descriptions=['Linux/UNIX'],
-                                                availability_zone=['ap-northeast-1a'])
-    result_list = api.command(query).get(u'SpotPriceHistory', [])
-
-    result_storage = []
-    print len(result_list)
-    for result in result_list:
-        result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))
-
     return '1'
 
 
+# Models
 class SpotPriceLog(db.Model):
     __tablename__ = u'spot_price_log'
     __table_args__ = (db.UniqueConstraint('instance_type',
@@ -70,3 +74,22 @@ class SpotPriceLog(db.Model):
             db.session.add(instance)
             db.session.commit()
         return instance
+
+
+# Celery
+@celery.task
+def crawl_spot_price():
+    api = AWSAPIWrapper()
+    query = api.ec2.describe_spot_price_history(instance_types=[],
+                                                start_time=datetime.utcnow() - timedelta(hours=1, minutes=15),
+                                                )
+    result = api.command(query)
+    save_spot_price_history(result)
+
+
+def save_spot_price_history(result):
+    result_list = result.get(u'SpotPriceHistory', [])
+    result_storage = []
+    print len(result_list)
+    for result in result_list:
+        result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))

@@ -8,3 +8,6 @@ FLASK_CONFIG = {
 
 CELERY_BROKER_URI = 'redis:///'
 CELERY_RESULT_URI = 'db+sqlite:///result.db'
+CELERY_PERIOD = {
+    'minutes': 10,
+}

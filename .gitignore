@@ -3,3 +3,7 @@
 *.swp
 settings.py
 .venv
+celerybeat-schedule.db
+result.db
+test.db
+test.py

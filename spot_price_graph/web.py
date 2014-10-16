@@ -4,7 +4,8 @@ import flask
 from celery import Celery
 from flask.ext.sqlalchemy import SQLAlchemy
 from flask_debugtoolbar import DebugToolbarExtension
-from settings import FLASK_CONFIG, TIMESTAMP_FORMAT, CELERY_BROKER_URI, CELERY_RESULT_URI
+from settings import (FLASK_CONFIG, TIMESTAMP_FORMAT,
+                      CELERY_BROKER_URI, CELERY_RESULT_URI, CELERY_PERIOD)
 from spot_price_graph.api import AWSAPIWrapper
 from datetime import datetime, timedelta
 
@@ -22,8 +23,7 @@ celery.conf.update(
     CELERYBEAT_SCHEDULE={
         'crawl-spot-price-every-hour': {
             'task': 'spot_price_graph.web.crawl_spot_price',
-            # 'schedule': timedelta(hours=1),
-            'schedule': timedelta(seconds=10),
+            'schedule': timedelta(**CELERY_PERIOD),
         }
     }
 )
@@ -90,6 +90,5 @@ def crawl_spot_price():
 def save_spot_price_history(result):
     result_list = result.get(u'SpotPriceHistory', [])
     result_storage = []
-    print len(result_list)
     for result in result_list:
         result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))

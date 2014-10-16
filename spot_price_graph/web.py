@@ -76,6 +76,22 @@ class SpotPriceLog(db.Model):
         return instance
 
 
+class CrawlLog(db.Model):
+    __tablename__ = u'crawl_log'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    crawled_at = db.Column(db.DateTime, nullable=False, index=True)
+
+    def __init__(self, **kwargs):
+        self.crawled_at = datetime.utcnow()
+        super(CrawlLog, self).__init__(**kwargs)
+
+    @classmethod
+    def complete(cls):
+        new = cls()
+        db.session.add(new)
+        db.session.commit()
+
+
 # Celery
 @celery.task
 def crawl_spot_price():
@@ -90,3 +106,5 @@ def save_spot_price_history(result):
     result_storage = []
     for result in result_list:
         result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))
+
+    CrawlLog.complete()

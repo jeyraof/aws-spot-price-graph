@@ -80,9 +80,7 @@ class SpotPriceLog(db.Model):
 @celery.task
 def crawl_spot_price():
     api = AWSAPIWrapper()
-    query = api.ec2.describe_spot_price_history(instance_types=[],
-                                                start_time=datetime.utcnow() - timedelta(hours=1, minutes=15),
-                                                )
+    query = api.ec2.describe_spot_price_history(start_time=datetime.utcnow() - timedelta(hours=1, minutes=15))
     result = api.command(query)
     save_spot_price_history(result)
 

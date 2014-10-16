@@ -1,6 +1,29 @@
 `AWS Spot Price Graph <https://github.com/jeyraof/aws-spot-price-graph>`_
 =========================================================================
 
+Pre Setup
+---------
+
+For detail description, you could follow `this <http://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html>`_.
+
+Directly,
+
+1. Set environment varialbes.
+
+.. code-block:: sh
+
+   $ export AWS_ACCESS_KEY_ID=*your_access_key_id*
+   $ export AWS_SECRET_ACCESS_KEY=*your_secret_access_key*
+
+2. Set credentials in the AWS credentials file.
+
+.. code-block:: ini
+
+   [default]
+   aws_access_key_id = your_access_key_id
+   aws_secret_access_key = your_secret_access_key
+
+
 Example
 -------
 

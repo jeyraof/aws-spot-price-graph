@@ -7,7 +7,6 @@ from flask_debugtoolbar import DebugToolbarExtension
 from settings import (FLASK_CONFIG, TIMESTAMP_FORMAT,
                       CELERY_BROKER_URI, CELERY_RESULT_URI, CELERY_PERIOD)
 from spot_price_graph.api import AWSAPIWrapper
-from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
 
 app = flask.Flask(__name__)
@@ -73,7 +72,6 @@ class SpotPriceLog(db.Model):
         if not instance:
             instance = cls(**kwargs)
             db.session.add(instance)
-            db.session.commit()
         return instance
 
 
@@ -90,7 +88,6 @@ class CrawlLog(db.Model):
     def complete(cls):
         new = cls()
         db.session.add(new)
-        db.session.commit()
 
 
 # Celery
@@ -100,6 +97,7 @@ def crawl_spot_price():
     query = api.ec2.describe_spot_price_history(start_time=datetime.utcnow() - timedelta(hours=1, minutes=15))
     result = api.command(query)
     save_spot_price_history(result)
+
     CrawlLog.complete()
 
 
@@ -107,7 +105,4 @@ def save_spot_price_history(result):
     result_list = result.get(u'SpotPriceHistory', [])
     result_storage = []
     for result in result_list:
-        try:
-            result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))
-        except IntegrityError:
-            pass
+        result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))

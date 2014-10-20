@@ -7,6 +7,7 @@ from flask_debugtoolbar import DebugToolbarExtension
 from settings import (FLASK_CONFIG, TIMESTAMP_FORMAT,
                       CELERY_BROKER_URI, CELERY_RESULT_URI, CELERY_PERIOD)
 from spot_price_graph.api import AWSAPIWrapper
+from sqlalchemy.exc import IntegrityError
 from datetime import datetime, timedelta
 
 app = flask.Flask(__name__)
@@ -106,4 +107,7 @@ def save_spot_price_history(result):
     result_list = result.get(u'SpotPriceHistory', [])
     result_storage = []
     for result in result_list:
-        result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))
+        try:
+            result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))
+        except IntegrityError:
+            pass

@@ -99,6 +99,7 @@ def crawl_spot_price():
     query = api.ec2.describe_spot_price_history(start_time=datetime.utcnow() - timedelta(hours=1, minutes=15))
     result = api.command(query)
     save_spot_price_history(result)
+    CrawlLog.complete()
 
 
 def save_spot_price_history(result):
@@ -106,5 +107,3 @@ def save_spot_price_history(result):
     result_storage = []
     for result in result_list:
         result_storage.append(SpotPriceLog.get_or_create(**SpotPriceLog.parse_result(result)))
-
-    CrawlLog.complete()
